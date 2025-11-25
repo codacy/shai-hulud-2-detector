@@ -155,8 +155,14 @@ The tool automatically ignores common directories:
 
 ## Vulnerability Database
 
-The tool fetches the vulnerability database from:
+The tool uses a local CSV file `shai-hulud-2-packages.csv` in the root directory. If the file is not found, it will fall back to downloading from:
 https://raw.githubusercontent.com/wiz-sec-public/wiz-research-iocs/refs/heads/main/reports/shai-hulud-2-packages.csv
+
+To update the local CSV file:
+```bash
+curl -o shai-hulud-2-packages.csv \
+  "https://raw.githubusercontent.com/wiz-sec-public/wiz-research-iocs/refs/heads/main/reports/shai-hulud-2-packages.csv"
+```
 
 This CSV contains package names and vulnerable version constraints in the format:
 - `= 1.2.3` - Exact version match
