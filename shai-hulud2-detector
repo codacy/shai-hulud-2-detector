@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""Shai Hulud 2 Detector - CLI entry point."""
+
+import sys
+from pathlib import Path
+
+# Add src to path
+src_path = Path(__file__).parent / 'src'
+sys.path.insert(0, str(src_path))
+
+import click
+from scanner import scan_directory
+from formatters import format_output
+
+__version__ = "1.0.0"
+
+
+@click.command()
+@click.argument('directory', type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path), default='.')
+@click.option('--format', 'output_format', type=click.Choice(['text', 'json', 'sarif'], case_sensitive=False), default='text', help='Output format')
+@click.option('--exit-code', is_flag=True, help='Exit with code 1 if vulnerabilities found')
+@click.option('--verbose', '-v', is_flag=True, help='Show detailed output')
+@click.option('--ignore', multiple=True, help='Additional ignore patterns (can be specified multiple times)')
+@click.version_option(version=__version__)
+def main(directory: Path, output_format: str, exit_code: bool, verbose: bool, ignore: tuple):
+    """Shai Hulud 2 Detector - Scan JavaScript repositories for vulnerable packages and malware."""
+    
+    if verbose:
+        click.echo(f"Scanning directory: {directory}", err=True)
+        click.echo(f"Output format: {output_format}", err=True)
+    
+    try:
+        # Perform scan
+        result = scan_directory(
+            directory,
+            ignore_patterns=list(ignore) if ignore else None,
+            verbose=verbose
+        )
+        
+        # Format and output results
+        output = format_output(result, output_format, __version__)
+        click.echo(output)
+        
+        # Exit code handling
+        if exit_code:
+            if result.vulnerable_packages_found > 0 or result.malware_files_found > 0:
+                sys.exit(1)
+            else:
+                sys.exit(0)
+    
+    except KeyboardInterrupt:
+        click.echo("\nScan interrupted by user", err=True)
+        sys.exit(130)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
+
